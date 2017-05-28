@@ -1,0 +1,163 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+
+<dom-module id="x-cam">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+      #camera {
+        display: block;
+        margin-bottom: 15px;
+      }
+      #canvas {
+        display: block;
+      }
+      #submit {
+        display: block;
+      }
+    </style>
+
+    <input type="file" accept="image/*" capture="camera" id="camera" on-change="photoTaken">
+    <form is="iron-form" id="form">
+      <input type="hidden" name="imageData" id="imageData"/>
+      <input type="hidden" name="mimeType" id="mimeType" />
+    </form>
+    <div>
+      <paper-button raised on-tap="_onSubmit" id="submit">Submit</paper-button>
+    </div>
+    <canvas id="canvas"></canvas>
+
+
+  </template>
+
+  <script>
+    // Define the element's API using an ES2015 class
+    class XCam extends Polymer.Element {
+
+      static get is() { return 'x-cam'; }
+
+      // Declare properties for the element's public API
+      static get properties() {
+        return {
+            photo: {
+                type: Object, value: {}
+            },
+            stream: {
+                type: Object, value: {}
+            }
+        }
+      }
+
+      ready() {
+          Polymer.RenderStatus.beforeNextRender(this, function() {
+              var form = this.$.form;
+              form.addEventListener('iron-form-presubmit', function(event) {
+                  event.preventDefault();
+
+                  console.log("*********");
+
+                  var newImage = form.serialize();
+                  this._ajax({
+                      url: '/api/tensorflow',
+                      method: 'POST',
+                      body: newImage
+                  }).then(function () {
+                      console.log(">>> SUBMIT SUCCEEDED")
+                  }).catch(function (err) {
+                      console.log(err);
+                      console.log(">>> SUBMIT FAILED")
+                  });
+              });
+          });
+          super.ready();
+      }
+
+      photoTaken(e) {
+        var file = e.target.files[0];
+        //console.log("photoTaken: "+file);
+        // Do something with the image file.
+        //this.$.frame.src = URL.createObjectURL(file);
+        var canvas = this.$.canvas;
+        var form = this.$.form;
+        var img = document.createElement("img");
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          img.src = e.target.result
+        };
+        img.onload = function() {
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+
+          var MAX_WIDTH = 100;
+          var MAX_HEIGHT = 75;
+          var width = img.width;
+          var height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          console.log(width+"x"+height);
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          form.mimeType.value = file.type;
+          form.imageData.value = canvas.toDataURL();
+
+        };
+        reader.readAsDataURL(file);
+      }
+
+      _onSubmit () {
+        this.$.form.submit();
+      }
+
+      _ajax (options) {
+        var _this = this;
+        var method = options.method || 'GET';
+        var url = options.url;
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        if (xhr.responseText) {
+                            resolve(JSON.parse(xhr.responseText));
+                        } else {
+                            resolve();
+                        }
+                    } else {
+                        reject({
+                            success: false,
+                            status: xhr.status
+                        });
+                    }
+                }
+            };
+            xhr.open(method, url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            if ((method === 'POST' || method === 'PUT') && options.body) {
+                xhr.send(JSON.stringify(options.body));
+            } else {
+                xhr.send();
+            }
+        });
+      }
+    }
+
+    // Register the x-cam element with the browser
+    customElements.define(XCam.is, XCam);
+  </script>
+</dom-module>
