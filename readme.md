@@ -1,4 +1,4 @@
-# AI experiments with PWA-PolymeR frontend and Java-Spring-Tensorflow backend
+# AI experiments with PWA-Polymer frontend and Java-Spring-Tensorflow backend
 
 This application demonstrates how to integrate TensorFlow with you Progressive Web Application. The idea is to use different pre-trained deep learning models.
 
