@@ -1,8 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
-<link rel="import" href="../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../bower_components/iron-form/iron-form.html">
-
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
 <dom-module id="x-cam">
   <template>
     <style include="shared-styles">
@@ -16,20 +14,20 @@
       #canvas {
         display: block;
       }
-      #submit {
-        display: block;
-      }
     </style>
 
     <input type="file" accept="image/*" capture="camera" id="camera" on-change="photoTaken">
-    <form is="iron-form" id="form">
-      <input type="hidden" name="imageData" id="imageData"/>
-      <input type="hidden" name="mimeType" id="mimeType" />
-    </form>
-    <div>
-      <paper-button raised on-tap="_onSubmit" id="submit">Submit</paper-button>
-    </div>
     <canvas id="canvas"></canvas>
+    <vaadin-grid id="grid" items=[[results]]>
+      <vaadin-grid-column>
+      <template class="header">Result</template>
+      <template>[[item.result]]</template>
+    </vaadin-grid-column>
+      <vaadin-grid-column>
+        <template class="header">Probability</template>
+        <template>[[item.prob]]</template>
+      </vaadin-grid-column>
+    </vaadin-grid>
 
 
   </template>
@@ -46,54 +44,27 @@
             photo: {
                 type: Object, value: {}
             },
-            stream: {
-                type: Object, value: {}
+            results: {
+                type: Array, value: []
             }
         }
       }
 
-      ready() {
-          Polymer.RenderStatus.beforeNextRender(this, function() {
-              var form = this.$.form;
-              form.addEventListener('iron-form-presubmit', function(event) {
-                  event.preventDefault();
-
-                  console.log("*********");
-
-                  var newImage = form.serialize();
-                  this._ajax({
-                      url: '/api/tensorflow',
-                      method: 'POST',
-                      body: newImage
-                  }).then(function () {
-                      console.log(">>> SUBMIT SUCCEEDED")
-                  }).catch(function (err) {
-                      console.log(err);
-                      console.log(">>> SUBMIT FAILED")
-                  });
-              });
-          });
-          super.ready();
-      }
-
       photoTaken(e) {
         var file = e.target.files[0];
-        //console.log("photoTaken: "+file);
-        // Do something with the image file.
-        //this.$.frame.src = URL.createObjectURL(file);
         var canvas = this.$.canvas;
-        var form = this.$.form;
         var img = document.createElement("img");
         var reader = new FileReader();
         reader.onload = function(e) {
           img.src = e.target.result
         };
+        var that =  this;
         img.onload = function() {
           var ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0);
 
-          var MAX_WIDTH = 100;
-          var MAX_HEIGHT = 75;
+          var MAX_WIDTH = 50;
+          var MAX_HEIGHT = 50;
           var width = img.width;
           var height = img.height;
 
@@ -113,15 +84,29 @@
           canvas.height = height;
           ctx.drawImage(img, 0, 0, width, height);
 
-          form.mimeType.value = file.type;
-          form.imageData.value = canvas.toDataURL();
+          var newImage = {
+              imageData: canvas.toDataURL(),
+              mimeType: file.type
+          };
+
+          that._ajax({
+              url: '/api/tensorflow',
+              method: 'POST',
+              body: newImage
+          }).then(function () {
+              console.log(">>> SUBMIT SUCCEEDED")
+
+          }).catch(function (err) {
+              console.log(err);
+              console.log(">>> SUBMIT FAILED")
+          });
 
         };
         reader.readAsDataURL(file);
       }
 
-      _onSubmit () {
-        this.$.form.submit();
+      showresult(result, prob) {
+          this.push('results', {"result":result, "prob": prob});
       }
 
       _ajax (options) {
@@ -138,6 +123,10 @@
                         } else {
                             resolve();
                         }
+                        var result = xhr.getResponseHeader("result");
+                        var prob = xhr.getResponseHeader("prob");
+                        console.log(result+"-"+prob);
+                        _this.showresult(result, prob);
                     } else {
                         reject({
                             success: false,

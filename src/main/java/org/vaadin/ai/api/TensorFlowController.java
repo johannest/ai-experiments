@@ -32,7 +32,6 @@ public class TensorFlowController {
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<Void> predictClass(@RequestBody Image image) {
-        final String fileEnding = image.getMimeType().split("/")[1];
         try {
             byte[] jpgData = getJpgBytes(getPngBytes(image.getImageData()));
 
@@ -41,6 +40,8 @@ public class TensorFlowController {
             System.out.println(res.getKey()+" "+res.getRight());
 
             MultiValueMap<String, String> headers = new LinkedMultiValueMap();
+            headers.add("result",res.getKey());
+            headers.add("prob",Double.toString(res.getRight()));
             final ResponseEntity<Void> response = new ResponseEntity<>(headers, HttpStatus.ACCEPTED);
             return response;
         } catch (IOException e) {

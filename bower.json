@@ -13,7 +13,7 @@
     "polymer": "Polymer/polymer#^2.0.0",
     "paper-button": "PolymerElements/paper-button#2.0",
     "vaadin-combo-box": "2.0.0-alpha4",
-    "iron-form": "2.0-preview"
+    "vaadin-grid": "master"
   },
   "resolutions": {
     "polymer": "^2.0.0-rc.3"
