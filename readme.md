@@ -3,7 +3,7 @@
 This application demonstrates how to integrate TensorFlow with you Progressive Web Application. The idea is to use different pre-trained deep learning models.
 
 ## Release 0.1 (pre-alpha)
-An initial release with PWA front-end and Java+Spring+Tensorflow backend. Using pre-trained imagenet_comp_graph model (https://github.com/miyosuda/TensorFlowAndroidDemo/tree/master/app/src/main/assets) with 1001 different image classed.
+An initial release with PWA front-end and Java+Spring+Tensorflow backend. Using pre-trained image-net model (https://github.com/miyosuda/TensorFlowAndroidDemo/tree/master/app/src/main/assets) with 1000 different image classed.
 
 <strong>Caution: There is some issue still with recognizer engine, that will be fixed in the next release.</strong>
  

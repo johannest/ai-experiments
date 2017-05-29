@@ -1,15 +1,23 @@
 package org.vaadin.ai.api;
 
-import org.apache.commons.lang3.tuple.*;
-import org.springframework.http.*;
-import org.springframework.stereotype.*;
-import org.springframework.util.*;
-import org.springframework.web.bind.annotation.*;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import java.util.Base64;
 
-import javax.imageio.*;
-import javax.xml.bind.*;
-import java.awt.image.*;
-import java.io.*;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 @Service
 @RestController
@@ -33,7 +41,8 @@ public class TensorFlowController {
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<Void> predictClass(@RequestBody Image image) {
         try {
-            byte[] jpgData = getJpgBytes(getPngBytes(image.getImageData()));
+            final byte[] pngBytes = getPngBytes(image.getImageData());
+            final byte[] jpgData = getJpgBytes(pngBytes);
 
             Pair<String, Float> res = tf.classify(jpgData);
 
@@ -51,7 +60,8 @@ public class TensorFlowController {
     }
 
     public static byte[] getPngBytes(String imgData) throws UnsupportedEncodingException {
-        return DatatypeConverter.parseBase64Binary(imgData.split(",")[1]);
+        final String base64Data = imgData.split(",")[1];
+        return Base64.getDecoder().decode(base64Data);
     }
 
     public static byte[] getJpgBytes(byte[] pngBytes) throws IOException {

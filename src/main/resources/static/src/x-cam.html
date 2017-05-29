@@ -4,16 +4,17 @@
 <dom-module id="x-cam">
   <template>
     <style include="shared-styles">
-      :host {
-        display: block;
-      }
-      #camera {
-        display: block;
-        margin-bottom: 15px;
-      }
-      #canvas {
-        display: block;
-      }
+        :host {
+            display: block;
+        }
+        #camera {
+            display: block;
+            margin-bottom: 15px;
+        }
+        #canvas {
+            display: block;
+            margin-bottom: 15px;
+        }
     </style>
 
     <input type="file" accept="image/*" capture="camera" id="camera" on-change="photoTaken">
