@@ -1,12 +1,21 @@
 package org.vaadin.ai.api;
 
-import org.apache.commons.lang3.tuple.*;
-import org.tensorflow.*;
+import org.apache.commons.lang3.tuple.Pair;
+import org.tensorflow.DataType;
+import org.tensorflow.Graph;
+import org.tensorflow.Output;
+import org.tensorflow.Session;
+import org.tensorflow.Tensor;
+import java.util.Arrays;
+import java.util.List;
 
-import java.io.*;
-import java.nio.charset.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Copied and modified from Apache 2.0 licensed code of TensorFlow examples:
@@ -26,12 +35,17 @@ public class TensorFlowProvider {
         labels = readAllLinesOrExit(Paths.get(labelsPath));
     }
 
-    public Pair<String, Float> classify(byte[] imageBytes) throws UnsupportedEncodingException {
+    public Pair<String, Float> classify(byte[] imageBytes)
+            throws UnsupportedEncodingException {
         try (Tensor image = constructAndExecuteGraphToNormalizeImage(
                 imageBytes)) {
             float[] labelProbabilities = executeInceptionGraph(graphDef, image);
             int bestLabelIdx = maxIndex(labelProbabilities);
-            return Pair.of(labels.get(bestLabelIdx),labelProbabilities[bestLabelIdx] * 100f);
+
+            float roundedProb = new BigDecimal(
+                    labelProbabilities[bestLabelIdx] * 100f)
+                            .setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
+            return Pair.of(labels.get(bestLabelIdx), roundedProb);
         }
     }
 
@@ -57,16 +71,19 @@ public class TensorFlowProvider {
             // images, a placeholder would
             // have been more appropriate.
             final Output input = graphBuilder.constant("input", imageBytes);
-            final Output output = graphBuilder
-                    .div(graphBuilder.sub(
+            final Output output = graphBuilder.div(
+                    graphBuilder.sub(
                             graphBuilder.resizeBilinear(
                                     graphBuilder.expandDims(
-                                            graphBuilder.cast(graphBuilder.decodeJpeg(input, 3),
+                                            graphBuilder.cast(graphBuilder
+                                                    .decodeJpeg(input, 3),
                                                     DataType.FLOAT),
-                                            graphBuilder.constant("make_batch", 0)),
-                                    graphBuilder.constant("size", new int[] { height, width })),
+                                            graphBuilder.constant("make_batch",
+                                                    0)),
+                                    graphBuilder.constant("size",
+                                            new int[] { height, width })),
                             graphBuilder.constant("mean", mean)),
-                            graphBuilder.constant("scale", scale));
+                    graphBuilder.constant("scale", scale));
             try (Session session = new Session(graph)) {
                 return session.runner().fetch(output.op().name()).run().get(0);
             }

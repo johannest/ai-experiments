@@ -33,25 +33,28 @@ public class TensorFlowController {
     }
 
     private String getTFDirectoryPath() {
-        String path = TensorFlowController.class.getResource("../../../../tf/").getPath();
-        System.out.println(">>>>"+path);
+        String path = TensorFlowController.class.getResource("../../../../tf/")
+                .getPath();
+        System.out.println(">>>>" + path);
         return path;
     }
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<Void> predictClass(@RequestBody Image image) {
         try {
-            final byte[] pngBytes = getPngBytes(image.getImageData());
-            final byte[] jpgData = getJpgBytes(pngBytes);
+            byte[] bytes = getBytesFromBase64(image.getImageData());
+            if (image.getMimeType().contains("png")) {
+                bytes = convertPngBytesToJpgBytes(bytes);
+            }
+            Pair<String, Float> res = tf.classify(bytes);
 
-            Pair<String, Float> res = tf.classify(jpgData);
-
-            System.out.println(res.getKey()+" "+res.getRight());
+            System.out.println(res.getKey() + " " + res.getRight());
 
             MultiValueMap<String, String> headers = new LinkedMultiValueMap();
-            headers.add("result",res.getKey());
-            headers.add("prob",Double.toString(res.getRight()));
-            final ResponseEntity<Void> response = new ResponseEntity<>(headers, HttpStatus.ACCEPTED);
+            headers.add("result", res.getKey());
+            headers.add("prob", Float.toString(res.getRight()));
+            final ResponseEntity<Void> response = new ResponseEntity<>(headers,
+                    HttpStatus.ACCEPTED);
             return response;
         } catch (IOException e) {
             e.printStackTrace();
@@ -59,14 +62,16 @@ public class TensorFlowController {
         }
     }
 
-    public static byte[] getPngBytes(String imgData) throws UnsupportedEncodingException {
+    public static byte[] getBytesFromBase64(String imgData)
+            throws UnsupportedEncodingException {
         final String base64Data = imgData.split(",")[1];
         return Base64.getDecoder().decode(base64Data);
     }
 
-    public static byte[] getJpgBytes(byte[] pngBytes) throws IOException {
-        final BufferedImage bimg = ImageIO.read(
-                new ByteArrayInputStream(pngBytes));
+    public static byte[] convertPngBytesToJpgBytes(byte[] pngBytes)
+            throws IOException {
+        final BufferedImage bimg = ImageIO
+                .read(new ByteArrayInputStream(pngBytes));
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
         ImageIO.write(bimg, "jpg", output);
         byte[] jpgData = output.toByteArray();
