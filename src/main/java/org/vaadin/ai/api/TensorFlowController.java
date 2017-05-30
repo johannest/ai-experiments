@@ -33,10 +33,8 @@ public class TensorFlowController {
     }
 
     private String getTFDirectoryPath() {
-        String path = TensorFlowController.class.getResource("../../../../tf/")
+        return TensorFlowController.class.getResource("../../../../tf/")
                 .getPath();
-        System.out.println(">>>>" + path);
-        return path;
     }
 
     @RequestMapping(method = RequestMethod.POST)
@@ -47,8 +45,6 @@ public class TensorFlowController {
                 bytes = convertPngBytesToJpgBytes(bytes);
             }
             Pair<String, Float> res = tf.classify(bytes);
-
-            System.out.println(res.getKey() + " " + res.getRight());
 
             MultiValueMap<String, String> headers = new LinkedMultiValueMap();
             headers.add("result", res.getKey());
