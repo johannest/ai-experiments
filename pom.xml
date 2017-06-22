@@ -5,7 +5,7 @@
 
 	<groupId>org.vaadin.ai</groupId>
 	<artifactId>ai-experiments</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<packaging>jar</packaging>
 
 	<name>ai-experiments</name>
@@ -60,6 +60,9 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<executable>true</executable>
+				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>exec-maven-plugin</artifactId>
